@@ -1,8 +1,7 @@
 # Core dependencies for ExamGenerator library
 reportlab>=4.0.0
-pillow>=10.0.0
-qrcode>=7.0.0
+Pillow>=10.0.0  # Note: Capital P for consistency
+qrcode[pil]>=7.0.0
 
-# Optional: Only needed if using password-protected PDFs
-# cryptography is included in reportlab for PDF encryption
-# cffi and pycparser are transitive dependencies that will be installed automatically
+# Encryption support for password-protected PDFs
+# cryptography is automatically installed as reportlab dependency
