@@ -1,0 +1,9 @@
+include README.md
+include LICENSE
+include requirements.txt
+recursive-include src/exam_generator *.py
+recursive-include src/exam_generator/fonts *.ttf
+recursive-include src/exam_generator/assets *
+recursive-exclude src/exam_generator/__pycache__ *
+recursive-exclude src/exam_generator/*.pyc
+recursive-exclude src/exam_generator/*/__pycache__ *

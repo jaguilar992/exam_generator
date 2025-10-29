@@ -166,3 +166,4 @@ Temporary Items
 *.pdf
 *qr*.png
 *gray*.png
+legacy/
