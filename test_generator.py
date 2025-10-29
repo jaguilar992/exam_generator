@@ -3,12 +3,11 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Spacer
 from reportlab.lib.units import cm
 
-
-
 from question_parser import QuestionParser
 from styles_manager import StylesManager
 from pdf_builder import PDFBuilder
 from test_config import TestConfig
+from encryption_utils import encrypt_answer_data
 
 class TestGenerator:
     def __init__(self, input_file, output_file, class_name=None, professor_name=None, institute_name=None, password=None, shuffle_options=True):
@@ -24,6 +23,9 @@ class TestGenerator:
         self.question_parser = QuestionParser(shuffle_options)
         self.styles_manager = StylesManager()
         self.pdf_builder = PDFBuilder(self.content_width)
+        
+        # Almacenar las preguntas barajadas para mantener consistencia
+        self._shuffled_questions = None
     
     def encode_answers_to_hex(self, correct_answers):
         """
@@ -56,21 +58,37 @@ class TestGenerator:
 
     
     def _prepare_qr_data(self, questions):
-        """Prepara los datos del QR sin encriptación"""
-        # Extraer respuestas correctas y generar código QR
+        """Prepara los datos del QR con las letras de las respuestas correctas encriptadas"""
+        # Extraer respuestas correctas y convertir a letras
         correct_answers = [q['correct_answer'] for q in questions]
-        hex_code = self.encode_answers_to_hex(correct_answers)
-    
+        # Convertir índices (0,1,2,3) a letras (A,B,C,D)
+        answer_letters = ''.join([chr(65 + answer) for answer in correct_answers])
         
         # Crear datos compactos para el QR usando formato simple
-        # Formato: Q#P#A# donde Q=preguntas, P=puntos, A=respuestas_hex
-        qr_data = f"Q{len(questions)}P{self.config.total}A{hex_code}"
+        # Formato: Q#P#A# donde Q=preguntas, P=puntos, A=respuestas_letras
+        plain_data = f"Q{len(questions)}_P{self.config.total}_{answer_letters}"
         
-        return qr_data
+        # Encriptar los datos usando la contraseña configurada
+        encrypted_data = encrypt_answer_data(plain_data, self.config.password)
+        
+        return encrypted_data
+    
+    def _get_shuffled_questions(self):
+        """Obtiene las preguntas barajadas, usando cache para consistencia"""
+        if self._shuffled_questions is None:
+            self._shuffled_questions = self.question_parser.parse_questions(self.input_file)
+            
+            # Limitar a máximo 25 preguntas
+            if len(self._shuffled_questions) > 25:
+                self._shuffled_questions = self._shuffled_questions[:25]
+                print(f"Advertencia: Se limitaron las preguntas a 25. {len(self._shuffled_questions)} preguntas procesadas.")
+        
+        return self._shuffled_questions
     
     def generate_pdf(self):
-        """Genera el PDF con el test"""
-        questions = self.question_parser.parse_questions(self.input_file)
+        """Genera el PDF con el test en el nuevo formato mejorado"""
+        questions = self._get_shuffled_questions()
+        
         styles = self.styles_manager.create_styles()
         
         # Preparar datos del QR (reutilizar el mismo QR)
@@ -95,19 +113,23 @@ class TestGenerator:
         # Header compacto con QR
         story.extend(self.pdf_builder.create_header(self.config, styles, self._qr_path))
         
-        # Título
-        story.append(Spacer(1, 0.15*cm))
+        # Sección de hoja de respuestas al inicio
+        story.extend(self.pdf_builder.create_answer_sheet_section(len(questions)))
         
-        # Preguntas
-        for i, question in enumerate(questions, 1):
-            story.append(self.pdf_builder.create_question_table(question, i, styles))
+        # Título de preguntas
+        story.append(Spacer(1, 0.3*cm))
+        
+        # Preguntas en formato de dos columnas
+        story.extend(self.pdf_builder.create_two_column_questions(questions, styles))
         
         doc.build(story)
         print(f"Test generado: {self.output_file}")
     
     def generate_answer_key_pdf(self, output_file, password):
         """Genera el PDF con las respuestas marcadas y protegido con contraseña"""
-        questions = self.question_parser.parse_questions(self.input_file)
+        # Usar las MISMAS preguntas barajadas que en el test de estudiantes
+        questions = self._get_shuffled_questions()
+        
         styles = self.styles_manager.create_styles()
         
         # Reutilizar los mismos datos del QR preparados anteriormente
@@ -147,12 +169,15 @@ class TestGenerator:
         # Header con configuración de pauta
         story.extend(self.pdf_builder.create_header(pauta_config, styles, self._qr_path))
         
-        # Título
-        story.append(Spacer(1, 0.15*cm))
+        # Agregar sección de respuestas marcadas en la pauta también
+        correct_answers = [q['correct_answer'] for q in questions]
+        story.extend(self.pdf_builder.create_answer_sheet_section(len(questions), correct_answers))
         
-        # Preguntas con respuestas marcadas
-        for i, question in enumerate(questions, 1):
-            story.append(self.pdf_builder.create_question_table_with_answer(question, i, styles))
+        # Título
+        story.append(Spacer(1, 0.3*cm))
+        
+        # Preguntas con respuestas marcadas en formato de dos columnas
+        story.extend(self.pdf_builder.create_two_column_questions_with_answers(questions, styles))
         
         doc.build(story, onFirstPage=on_first_page, onLaterPages=on_later_pages)
         print(f"Pauta de respuestas generada: {output_file} (protegida con contraseña)")
