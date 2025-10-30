@@ -8,13 +8,13 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="exam-generator",
-    version="1.0.0",
-    author="Your Name",
-    author_email="your.email@example.com",
+    version="1.0.1",
+    author="Antonio Aguilar",
+    author_email="jaguilar992@gmail.com",
     description="A Python library for generating professional multiple-choice exam PDFs",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/exam-generator",
+    url="https://github.com/jaguilar992/exam_generator",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     classifiers=[
@@ -34,7 +34,6 @@ setup(
         "reportlab>=4.0.0",
         "pillow>=10.0.0",
         "qrcode>=7.0.0",
-        "cryptography>=40.0.0",
     ],
     extras_require={
         "dev": [

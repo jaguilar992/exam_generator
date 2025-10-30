@@ -29,9 +29,9 @@ from .encryption import (
     AnswerKeyEncryption
 )
 
-__version__ = "1.0.0"
-__author__ = "Your Name"
-__email__ = "your.email@example.com"
+__version__ = "1.0.1"
+__author__ = "Antonio Aguilar"
+__email__ = "jaguilar992@gmail.com"
 
 __all__ = [
     # Core classes

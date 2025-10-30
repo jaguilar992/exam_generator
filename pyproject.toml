@@ -3,13 +3,13 @@ requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "exam-generator"
+name = "exam_generator"
 dynamic = ["version"]
 description = "Professional exam generator with QR code answer sheets"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "Antonio Aguilar", email = "jaguilar992@gmail.com"}
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -31,9 +31,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/exam-generator"
-Repository = "https://github.com/yourusername/exam-generator"
-Documentation = "https://github.com/yourusername/exam-generator#readme"
+Homepage = "https://github.com/jaguilar992/exam_generator"
+Repository = "https://github.com/jaguilar992/exam_generator"
+Documentation = "https://github.com/jaguilar992/exam_generator#readme"
 
 [tool.setuptools.dynamic]
 version = {attr = "exam_generator.__version__"}
