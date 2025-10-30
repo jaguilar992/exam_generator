@@ -4,11 +4,10 @@ Encryption utilities for answer key protection.
 """
 
 from ..exceptions import EncryptionError
-
+from string import ascii_letters, digits
 
 # Custom alphabet for encoding
-ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-
+ALPHABET = digits + ascii_letters
 
 class AnswerKeyEncryption:
     """
