@@ -26,65 +26,65 @@ class TextStrings:
             # Header texts
             "student_label": "Student",
             "course_label": "Course", 
-            "class_label": "Class",
-            "professor_label": "Professor",
+            "class_label": "Section",
+            "professor_label": "Instructor",
             "date_label": "Date",
-            "list_number_label": "#List",
-            "value_label": "Value",
+            "list_number_label": "Student #",
+            "value_label": "Points",
             "points_suffix": "pts",
-            "grade_label": "Grade",
+            "grade_label": "Score",
             
             # Instructions
             "instructions_title": "INSTRUCTIONS",
             "instructions_text": (
                 "Read each question carefully and select the correct answer by completely "
-                "filling in the corresponding circle. Use only pencil No. 2 or blue or black pen."
+                "filling in the corresponding circle. Use only a No. 2 pencil or blue or black ink pen."
             ),
             
             # Answer sheet
             "answer_sheet_title": "ANSWER SHEET",
             
             # Answer key specific
-            "answer_key_student_name": "ANSWER KEY - ANSWER SHEET",
+            "answer_key_student_name": "ANSWER KEY",
             
             # Default form fields
-            "student_name_blank": "Student: _________________________________________________________________",
-            "course_section_blank": "Course: ___________________",
+            "student_name_blank": "Student Name: ___________________________________________________________",
+            "course_section_blank": "Course/Section: ___________________",
             "date_blank": "Date: ________________",
-            "list_number_blank": "#List: ________________"
+            "list_number_blank": "Student #: ________________"
         },
         
         Language.SPANISH: {
             # Header texts
-            "student_label": "Alumno",
-            "course_label": "Curso",
-            "class_label": "Clase", 
-            "professor_label": "Profesor",
+            "student_label": "Estudiante",
+            "course_label": "Asignatura",
+            "class_label": "Sección", 
+            "professor_label": "Docente",
             "date_label": "Fecha",
-            "list_number_label": "#Lista",
-            "value_label": "Valor",
+            "list_number_label": "N° Lista",
+            "value_label": "Puntos",
             "points_suffix": "pts",
-            "grade_label": "Calificación",
+            "grade_label": "Nota",
             
             # Instructions
             "instructions_title": "INSTRUCCIONES",
             "instructions_text": (
-                "Lea cuidadosamente cada pregunta y seleccione la respuesta "
-                "correcta rellenando completamente el círculo correspondiente. Use únicamente lápiz "
-                "No. 2 o bolígrafo azul o negro."
+                "Lea cuidadosamente cada pregunta y seleccione la respuesta correcta "
+                "rellenando completamente el círculo correspondiente. Use únicamente lápiz "
+                "No. 2 o bolígrafo de tinta azul o negra."
             ),
             
             # Answer sheet
             "answer_sheet_title": "HOJA DE RESPUESTAS",
             
             # Answer key specific  
-            "answer_key_student_name": "PAUTA - HOJA DE RESPUESTAS",
+            "answer_key_student_name": "CLAVE DE RESPUESTAS",
             
             # Default form fields
-            "student_name_blank": "Alumno: _________________________________________________________________",
-            "course_section_blank": "Curso: ___________________", 
+            "student_name_blank": "Nombre del Estudiante: __________________________________________________",
+            "course_section_blank": "Asignatura/Sección: ___________________", 
             "date_blank": "Fecha: ________________",
-            "list_number_blank": "#Lista: ________________"
+            "list_number_blank": "N° Lista: ________________"
         }
     }
     
