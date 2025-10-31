@@ -33,7 +33,7 @@ jobs:
         ls -la dist/
     
     - name: Upload wheel artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
       with:
         name: wheel-build
