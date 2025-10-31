@@ -10,6 +10,7 @@ A Python library for generating professional multiple-choice exam PDFs with adva
 - **Password Protection**: Secure answer key PDFs with password encryption
 - **Unicode Support**: Full support for special characters and international text
 - **System-Independent Fonts**: Uses embedded Liberation fonts for consistent rendering across platforms
+- **Internationalization**: Built-in support for English and Spanish headers and instructions
 - **Flexible Question Input**: Support for file-based or programmatic question input
 - **Option Shuffling**: Automatic randomization of answer choices
 - **Two-Column Layout**: Efficient use of page space
@@ -67,7 +68,7 @@ This creates a `src/exam_generator/fonts/` directory with the required font file
 ## Quick Start
 
 ```python
-from exam_generator import ExamGenerator
+from exam_generator import ExamGenerator, Language
 
 # Configure using Builder pattern (recommended)
 config = (ExamGenerator.builder()
@@ -77,6 +78,7 @@ config = (ExamGenerator.builder()
          .professor("John Smith")
          .password("exam2024")
          .logo("path/to/logo.png")  # Required!
+         .language(Language.ENGLISH)  # English (default) or Spanish
          .total_points(100)
          .build())
 
@@ -119,6 +121,109 @@ Marseille
 - **The first option is always the correct answer**
 - Empty lines are ignored
 
+## Internationalization Support
+
+The library supports English and Spanish headers and instructions. By default, all text appears in English, but you can easily switch to Spanish or create custom text strings.
+
+### Supported Languages
+
+- **English** (default): All headers, instructions, and labels in English
+- **Spanish**: All headers, instructions, and labels in Spanish
+
+### Setting Language
+
+```python
+from exam_generator import ExamGenerator, Language
+
+# English exam (default)
+config = (ExamGenerator.builder()
+         .institute("Technical Institute")
+         .course("Computer Science")
+         .class_subject("Programming")
+         .professor("Dr. Smith")
+         .password("exam2024")
+         .logo("logo.png")
+         .language(Language.ENGLISH)  # Explicit English
+         .build())
+
+# Spanish exam
+config = (ExamGenerator.builder()
+         .institute("Instituto Técnico")
+         .course("Ciencias de la Computación")
+         .class_subject("Programación")
+         .professor("Dr. González")
+         .password("examen2024")
+         .logo("logo.png")
+         .language(Language.SPANISH)  # Spanish headers
+         .build())
+```
+
+### What Gets Translated
+
+When you set the language, the following elements are automatically localized:
+
+| Element | English | Spanish |
+|---------|---------|---------|
+| Student field | "Student:" | "Alumno:" |
+| Course field | "Course:" | "Curso:" |
+| Class field | "Class:" | "Clase:" |
+| Professor field | "Professor:" | "Profesor:" |
+| Date field | "Date:" | "Fecha:" |
+| List number field | "#List:" | "#Lista:" |
+| Grade box | "Grade" | "Calificación" |
+| Points value | "Value: X pts" | "Valor: X pts" |
+| Instructions title | "INSTRUCTIONS:" | "INSTRUCCIONES:" |
+| Answer sheet title | "ANSWER SHEET" | "HOJA DE RESPUESTAS" |
+| Answer key label | "ANSWER KEY - ANSWER SHEET" | "PAUTA - HOJA DE RESPUESTAS" |
+
+### Instructions Text
+
+The instructions text is also fully localized:
+
+**English:**
+> "Read each question carefully and select the correct answer by completely filling in the corresponding circle. Use only pencil No. 2 or blue or black pen."
+
+**Spanish:**
+> "Lea cuidadosamente cada pregunta y seleccione la respuesta correcta rellenando completamente el círculo correspondiente. Use únicamente lápiz No. 2 o bolígrafo azul o negro."
+
+### Global Language Setting
+
+You can also set a global default language for all exams:
+
+```python
+from exam_generator import set_global_language, Language
+
+# Set Spanish as global default
+set_global_language(Language.SPANISH)
+
+# Now all exams will default to Spanish unless explicitly overridden
+config = ExamGenerator.builder()  # Will use Spanish
+    # ... other configuration
+
+# Override for specific exam
+config = ExamGenerator.builder().language(Language.ENGLISH)  # Force English
+    # ... other configuration
+```
+
+### Custom Text Strings
+
+For advanced use cases, you can access the text strings directly:
+
+```python
+from exam_generator import get_text_strings, Language
+
+# Get English text strings
+english_texts = get_text_strings(Language.ENGLISH)
+print(english_texts.get('student_label'))  # "Student"
+
+# Get Spanish text strings
+spanish_texts = get_text_strings(Language.SPANISH)
+print(spanish_texts.get('student_label'))  # "Alumno"
+
+# Format points text
+points_text = english_texts.get_points_text(100)  # "Value: 100 pts"
+```
+
 ## Configuration Options
 
 ### Builder Pattern (Recommended)
@@ -136,6 +241,7 @@ config = (ExamGenerator.builder()
          .exam_period("Final Exam 2024")      # Optional
          .total_points(100)                    # Optional, defaults to 100
          .year(2024)                          # Optional, defaults to current year
+         .language(Language.SPANISH)          # Optional, defaults to English
          .build())
 ```
 
@@ -155,7 +261,8 @@ config = ExamConfig(
     course_section="Section A",               # Optional
     exam_period="Final Exam 2024",           # Optional
     total_points=100,                         # Optional, defaults to 100
-    year=2024                                 # Optional, defaults to current year
+    year=2024,                               # Optional, defaults to current year
+    language=Language.SPANISH                # Optional, defaults to English
 )
 ```
 
@@ -385,6 +492,49 @@ with ExamGenerator(config, shuffle_options=True, max_questions=30) as gen:
     
     print(f"Student exam: {student_file}")
     print(f"Answer key: {answer_file}")
+
+### Internationalization Example
+
+```python
+from exam_generator import ExamGenerator, Language
+
+# Create Spanish exam
+spanish_config = (ExamGenerator.builder()
+                 .institute("Instituto Técnico Superior")
+                 .course("Licenciatura en Ingeniería")
+                 .class_subject("Matemáticas Avanzadas")
+                 .professor("Dr. María González")
+                 .section("Sección A - Turno Noche")
+                 .exam_period("Examen Parcial - Otoño 2024")
+                 .password("matematicas2024")
+                 .logo("logo_instituto.png")
+                 .language(Language.SPANISH)  # Spanish headers and instructions
+                 .total_points(100)
+                 .build())
+
+# Spanish questions content
+questions_spanish = """
+- ¿Cuál es la derivada de f(x) = x²?
+2x
+x²
+x
+1
+
+- ¿Cuánto es la integral ∫ 2x dx?
+x² + C
+2x² + C
+x + C
+2 + C
+"""
+
+with ExamGenerator(spanish_config) as generator:
+    generator.load_questions_from_string(questions_spanish)
+    student_pdf, answer_pdf = generator.generate_both(
+        "examen_estudiantes.pdf",    # Spanish filenames too!
+        "examen_respuestas.pdf"
+    )
+    print(f"Examen generado: {student_pdf}")
+```
 
 ### QR Code Decryption Example
 

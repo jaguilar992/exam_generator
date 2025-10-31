@@ -7,6 +7,7 @@ import datetime
 import os
 from typing import Optional
 from .exceptions import ConfigurationError
+from .i18n import Language, get_text_strings
 
 
 class ExamConfig:
@@ -29,7 +30,8 @@ class ExamConfig:
         total_points: int = 100,
         password: str = "default_password",
         logo_path: Optional[str] = None,
-        year: Optional[int] = None
+        year: Optional[int] = None,
+        language: Language = Language.ENGLISH
     ):
         """
         Initialize exam configuration.
@@ -46,6 +48,7 @@ class ExamConfig:
             password (str): Password for answer key encryption (default: "default_password")
             logo_path (str, optional): Path to institution logo image file
             year (int, optional): Year for the exam. If None, uses current year
+            language (Language): Language for headers and instructions (default: English)
         
         Raises:
             ConfigurationError: If required parameters are missing or invalid
@@ -71,29 +74,38 @@ class ExamConfig:
         # Set core parameters
         self.institute_name = institute_name.strip()
         self.course = course_name.strip()
-        self.class_name = f"Clase: {class_name.strip()}"
-        self.professor_name = f"Profesor: {professor_name.strip()}"
+        self.language = language
+        
+        # Get text strings for the specified language
+        text_strings = get_text_strings(language)
+        
+        self.class_name = f"{text_strings.get_label_with_colon('class_label')} {class_name.strip()}"
+        self.professor_name = f"{text_strings.get_label_with_colon('professor_label')} {professor_name.strip()}"
         
         # Set optional parameters with defaults
         self.year = year if year is not None else datetime.datetime.now().year
         
         if student_name is not None:
-            self.student_name = f"Alumno: {student_name.strip()}"
+            self.student_name = f"{text_strings.get_label_with_colon('student_label')} {student_name.strip()}"
         else:
-            self.student_name = "Alumno: _________________________________________________________________"
+            self.student_name = text_strings.get('student_name_blank')
         
         if course_section is not None:
-            self.course_section = f"Curso: {course_section.strip()}"
+            self.course_section = f"{text_strings.get_label_with_colon('course_label')} {course_section.strip()}"
         else:
-            self.course_section = "Curso: ___________________"
+            self.course_section = text_strings.get('course_section_blank')
         
         if exam_period is not None:
             self.exam_period = exam_period.strip()
         else:
-            self.exam_period = f"I Parcial {self.year}"
+            # Default exam period based on language
+            if language == Language.SPANISH:
+                self.exam_period = f"I Parcial {self.year}"
+            else:
+                self.exam_period = f"Midterm Exam {self.year}"
         
         self.total = total_points
-        self.test_value = f"Valor: {self.total} pts"
+        self.test_value = text_strings.get_points_text(self.total)
         self.password = password.strip()
         self.logo_path = logo_path.strip()
     
@@ -129,7 +141,8 @@ class ExamConfig:
             'test_value': self.test_value,
             'password': self.password,
             'logo_path': self.logo_path,
-            'year': self.year
+            'year': self.year,
+            'language': self.language
         }
     
     @classmethod
@@ -146,20 +159,31 @@ class ExamConfig:
         # Extract base parameters, removing prefixes for the constructor
         institute_name = config_dict['institute_name']
         course_name = config_dict['course']
+        language = config_dict.get('language', Language.ENGLISH)
+        
+        # Get text strings for the language to properly remove prefixes
+        text_strings = get_text_strings(language)
         
         # Remove prefixes from class_name and professor_name
-        class_name = config_dict['class_name'].replace("Clase: ", "")
-        professor_name = config_dict['professor_name'].replace("Profesor: ", "")
+        class_prefix = text_strings.get_label_with_colon('class_label') + " "
+        professor_prefix = text_strings.get_label_with_colon('professor_label') + " "
+        
+        class_name = config_dict['class_name'].replace(class_prefix, "")
+        professor_name = config_dict['professor_name'].replace(professor_prefix, "")
         
         # Handle student_name - extract actual name or None for blank
         student_name = None
-        if not config_dict['student_name'].endswith("_________________________________________________________________"):
-            student_name = config_dict['student_name'].replace("Alumno: ", "")
+        student_blank = text_strings.get('student_name_blank')
+        if config_dict['student_name'] != student_blank:
+            student_prefix = text_strings.get_label_with_colon('student_label') + " "
+            student_name = config_dict['student_name'].replace(student_prefix, "")
         
         # Handle course_section - extract actual section or None for blank
         course_section = None
-        if not config_dict['course_section'].endswith("___________________"):
-            course_section = config_dict['course_section'].replace("Curso: ", "")
+        course_blank = text_strings.get('course_section_blank')
+        if config_dict['course_section'] != course_blank:
+            course_prefix = text_strings.get_label_with_colon('course_label') + " "
+            course_section = config_dict['course_section'].replace(course_prefix, "")
         
         return cls(
             institute_name=institute_name,
@@ -172,7 +196,8 @@ class ExamConfig:
             total_points=config_dict['total'],
             password=config_dict['password'],
             logo_path=config_dict['logo_path'],
-            year=config_dict['year']
+            year=config_dict['year'],
+            language=language
         )
 
 
@@ -196,6 +221,7 @@ class ExamConfigBuilder:
         self._password: Optional[str] = None
         self._logo_path: Optional[str] = None
         self._year: Optional[int] = None
+        self._language: Language = Language.ENGLISH
     
     def institute(self, name: str) -> 'ExamConfigBuilder':
         """
@@ -340,6 +366,19 @@ class ExamConfigBuilder:
         self._year = year
         return self
     
+    def language(self, language: Language) -> 'ExamConfigBuilder':
+        """
+        Set the language for headers and instructions.
+        
+        Args:
+            language (Language): Language to use (English or Spanish)
+            
+        Returns:
+            ExamConfigBuilder: Self for chaining
+        """
+        self._language = language
+        return self
+    
     def build(self) -> ExamConfig:
         """
         Build the ExamConfig instance.
@@ -375,5 +414,6 @@ class ExamConfigBuilder:
             total_points=self._total_points,
             password=self._password,
             logo_path=self._logo_path,
-            year=self._year
+            year=self._year,
+            language=self._language
         )

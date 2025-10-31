@@ -17,6 +17,7 @@ from PIL import Image as PILImage
 
 from .styles import StylesManager
 from ..config import ExamConfig
+from ..i18n import get_text_strings, get_instructions_text, get_answer_sheet_title
 
 
 class PDFBuilder:
@@ -60,7 +61,7 @@ class PDFBuilder:
         story.extend(self._create_header(config, qr_image_path))
         
         # Answer sheet section
-        story.extend(self._create_answer_sheet_section(len(questions)))
+        story.extend(self._create_answer_sheet_section(len(questions), config))
         
         # Questions section
         story.append(Spacer(1, 0.3*cm))
@@ -92,7 +93,7 @@ class PDFBuilder:
         
         # Answer sheet with marked answers
         correct_answers = [q['correct_answer'] for q in questions]
-        story.extend(self._create_answer_sheet_section(len(questions), correct_answers))
+        story.extend(self._create_answer_sheet_section(len(questions), config, correct_answers))
         
         # Questions with marked answers
         story.append(Spacer(1, 0.3*cm))
@@ -111,7 +112,7 @@ class PDFBuilder:
         # Prepare header components
         logo_cell = self._create_logo_cell(config.logo_path, logo_qr_size)
         qr_cell = self._create_qr_cell(qr_image_path, logo_qr_size)
-        grade_box = self._create_grade_box(grade_box_size)
+        grade_box = self._create_grade_box(grade_box_size, config)
         
         # Main header table
         header_table = self._create_header_table(logo_cell, qr_cell, grade_box, logo_qr_size, grade_box_size)
@@ -125,7 +126,7 @@ class PDFBuilder:
         elements.append(self._create_info_table(config))
         
         # Instructions
-        elements.append(self._create_instructions())
+        elements.append(self._create_instructions(config))
         
         return elements
     
@@ -151,13 +152,16 @@ class PDFBuilder:
         except Exception:
             return ""
     
-    def _create_grade_box(self, size: float) -> Table:
+    def _create_grade_box(self, size: float, config: ExamConfig) -> Table:
         """Create grade box for header."""
+        # Get grade label based on config language
+        grade_label = get_text_strings(config.language).get('grade_label') if hasattr(config, 'language') else "Grade"
+        
         grade_data = [
             [""],  # Space for grade
             [""],
             [""],
-            ["Calificación"]
+            [grade_label]
         ]
         
         grade_table = Table(
@@ -221,9 +225,12 @@ class PDFBuilder:
     
     def _create_info_table(self, config: ExamConfig) -> Table:
         """Create student and exam information table."""
+        # Get text strings based on config language
+        text_strings = get_text_strings(config.language if hasattr(config, 'language') else None)
+        
         info_data = [
-            [config.class_name, config.professor_name, "Fecha: ________________"],
-            [config.student_name, "", "#Lista: ________________"],
+            [config.class_name, config.professor_name, text_strings.get('date_blank')],
+            [config.student_name, "", text_strings.get('list_number_blank')],
             [config.course_section, config.exam_period, config.test_value]
         ]
         
@@ -237,11 +244,10 @@ class PDFBuilder:
         
         return info_table
     
-    def _create_instructions(self) -> Paragraph:
+    def _create_instructions(self, config: ExamConfig) -> Paragraph:
         """Create exam instructions."""
-        instructions_text = ("<b>INSTRUCCIONES:</b> Lea cuidadosamente cada pregunta y seleccione la respuesta "
-                           "correcta rellenando completamente el círculo correspondiente. Use únicamente lápiz "
-                           "No. 2 o bolígrafo azul o negro.")
+        # Get instructions text based on config language
+        instructions_text = get_instructions_text(config.language if hasattr(config, 'language') else None)
         
         return self.styles_manager.create_paragraph_with_unicode_support(
             instructions_text,
@@ -251,14 +257,16 @@ class PDFBuilder:
     def _create_answer_sheet_section(
         self, 
         max_questions: int, 
+        config: ExamConfig,
         correct_answers: Optional[List[int]] = None
     ) -> List[Any]:
         """Create answer sheet section with bubble grid."""
         elements = []
         
         # Title
+        title_text = get_answer_sheet_title(config.language if hasattr(config, 'language') else None)
         title = self.styles_manager.create_paragraph_with_unicode_support(
-            "<b>HOJA DE RESPUESTAS</b>",
+            title_text,
             self.styles['answer_title']
         )
         elements.append(title)

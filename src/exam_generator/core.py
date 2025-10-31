@@ -6,12 +6,16 @@ Main ExamGenerator class - the public API for the library.
 import os
 import tempfile
 import atexit
+import qrcode
 from typing import List, Dict, Any, Optional, Union
+from PIL import Image
 from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate
 
 from .config import ExamConfig, ExamConfigBuilder
 from .exceptions import ExamGeneratorError, FileGenerationError
+from .i18n import get_text_strings
 from .internal.question_parser import QuestionParser
 from .internal.encryption import encrypt_answer_data
 from .internal.pdf_builder import PDFBuilder
@@ -340,8 +344,6 @@ class ExamGenerator:
     def _ensure_pdf_builder(self) -> None:
         """Initialize PDF builder if needed."""
         if self.pdf_builder is None:
-            from .internal.pdf_builder import PDFBuilder
-            from reportlab.lib.units import cm
             page_width, page_height = letter
             margin = 0.7 * cm  # 0.7 cm margins
             content_width = page_width - 2 * margin
@@ -364,9 +366,6 @@ class ExamGenerator:
             qr_data = self._get_qr_data()
             
             # Generate QR code image
-            import qrcode
-            from PIL import Image
-            
             qr = qrcode.QRCode(
                 version=1,
                 error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -389,5 +388,7 @@ class ExamGenerator:
         """Create configuration for answer key."""
         # Create a copy with modified student name for answer key
         config_dict = self.config.to_dict()
-        config_dict['student_name'] = "PAUTA - HOJA DE RESPUESTAS"
+        # Use localized answer key student name
+        text_strings = get_text_strings(config_dict.get('language'))
+        config_dict['student_name'] = text_strings.get('answer_key_student_name')
         return ExamConfig.from_dict(config_dict)

@@ -14,6 +14,7 @@ This library provides an easy-to-use interface for creating formatted exams with
 
 from .core import ExamGenerator
 from .config import ExamConfig, ExamConfigBuilder
+from .i18n import Language, TextStrings, get_text_strings, set_global_language
 from .exceptions import (
     ExamGeneratorError, 
     InvalidQuestionFormatError,
@@ -38,6 +39,12 @@ __all__ = [
     "ExamGenerator", 
     "ExamConfig",
     "ExamConfigBuilder",
+    
+    # Internationalization
+    "Language",
+    "TextStrings",
+    "get_text_strings",
+    "set_global_language",
     
     # Exceptions
     "ExamGeneratorError", 
