@@ -1,4 +1,4 @@
-name: Build Wheel
+name: Build and Release
 
 on:
   push:
@@ -7,8 +7,9 @@ on:
     branches: [ master, main ]
 
 jobs:
-  build-wheel:
+  build-and-release:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
     
     steps:
     - name: Checkout code
@@ -24,25 +25,94 @@ jobs:
         python -m pip install --upgrade pip
         pip install build
     
-    - name: Build wheel
+    - name: Get version
+      id: version
       run: |
-        python -m build --wheel
+        VERSION=$(python -c "import sys; sys.path.insert(0, 'src'); import exam_generator; print(exam_generator.__version__)")
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version detected: $VERSION"
     
-    - name: List built files
+    - name: Build wheel and source
       run: |
+        python -m build
+        echo "Build completed successfully!"
         ls -la dist/
     
-    - name: Upload wheel artifact
-      uses: actions/upload-artifact@v4
-      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        name: wheel-build
-        path: dist/*.whl
-        retention-days: 30
+        tag_name: v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}
+        release_name: "Exam Generator v${{ steps.version.outputs.VERSION }} (Build ${{ github.run_number }})"
+        draft: false
+        prerelease: false
+        body: |
+          ## 🚀 Automated Release
+          
+          **Version:** ${{ steps.version.outputs.VERSION }}
+          **Build:** ${{ github.run_number }}
+          **Commit:** ${{ github.sha }}
+          **Branch:** ${{ github.ref_name }}
+          **Date:** $(date -u)
+          
+          ### 📦 Installation
+          
+          Download the wheel file and install:
+          ```bash
+          pip install exam_generator-${{ steps.version.outputs.VERSION }}-py3-none-any.whl
+          ```
+          
+          Or install from PyPI:
+          ```bash
+          pip install exam_generator==${{ steps.version.outputs.VERSION }}
+          ```
+          
+          ### 📋 Files Included
+          - 🎡 **Wheel package** (`.whl`) - Ready for installation
+          - 📦 **Source distribution** (`.tar.gz`) - For building from source
     
-    - name: Show build info
+    - name: Upload Wheel to Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/exam_generator-${{ steps.version.outputs.VERSION }}-py3-none-any.whl
+        asset_name: exam_generator-${{ steps.version.outputs.VERSION }}-py3-none-any.whl
+        asset_content_type: application/zip
+    
+    - name: Upload Source Distribution to Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/exam_generator-${{ steps.version.outputs.VERSION }}.tar.gz
+        asset_name: exam_generator-${{ steps.version.outputs.VERSION }}.tar.gz
+        asset_content_type: application/gzip
+
+  build-check:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+    
+    - name: Install build dependencies
       run: |
-        echo "Built wheel for commit: ${{ github.sha }}"
-        echo "Branch: ${{ github.ref_name }}"
-        echo "Files created:"
+        python -m pip install --upgrade pip
+        pip install build
+    
+    - name: Build wheel (verification only)
+      run: |
+        python -m build --wheel
+        echo "✅ Build verification successful!"
         ls -la dist/
