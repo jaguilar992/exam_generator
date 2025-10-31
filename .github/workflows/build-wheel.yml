@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ master, main ]
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
@@ -43,15 +47,16 @@ jobs:
         ls -la dist/
     
     - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}
-        release_name: "Exam Generator v${{ steps.version.outputs.VERSION }} (Build ${{ github.run_number }})"
+        name: "Exam Generator v${{ steps.version.outputs.VERSION }} (Build ${{ github.run_number }})"
         draft: false
         prerelease: false
+        generate_release_notes: false
+        files: |
+          dist/exam_generator-${{ steps.version.outputs.VERSION }}-py3-none-any.whl
+          dist/exam_generator-${{ steps.version.outputs.VERSION }}.tar.gz
         body: |
           ## 🚀 Automated Release
           
@@ -59,7 +64,7 @@ jobs:
           **Build:** ${{ github.run_number }}
           **Commit:** ${{ github.sha }}
           **Branch:** ${{ github.ref_name }}
-          **Date:** $(date -u)
+          **Date:** ${{ github.event.head_commit.timestamp }}
           
           ### 📦 Installation
           
@@ -76,26 +81,10 @@ jobs:
           ### 📋 Files Included
           - 🎡 **Wheel package** (`.whl`) - Ready for installation
           - 📦 **Source distribution** (`.tar.gz`) - For building from source
-    
-    - name: Upload Wheel to Release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./dist/exam_generator-${{ steps.version.outputs.VERSION }}-py3-none-any.whl
-        asset_name: exam_generator-${{ steps.version.outputs.VERSION }}-py3-none-any.whl
-        asset_content_type: application/zip
-    
-    - name: Upload Source Distribution to Release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./dist/exam_generator-${{ steps.version.outputs.VERSION }}.tar.gz
-        asset_name: exam_generator-${{ steps.version.outputs.VERSION }}.tar.gz
-        asset_content_type: application/gzip
+          
+          ### 🔗 Download Links
+          - [📦 exam_generator-${{ steps.version.outputs.VERSION }}-py3-none-any.whl](https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}/exam_generator-${{ steps.version.outputs.VERSION }}-py3-none-any.whl)
+          - [📄 exam_generator-${{ steps.version.outputs.VERSION }}.tar.gz](https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.VERSION }}-build${{ github.run_number }}/exam_generator-${{ steps.version.outputs.VERSION }}.tar.gz)
 
   build-check:
     runs-on: ubuntu-latest
