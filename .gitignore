@@ -167,3 +167,6 @@ Temporary Items
 *qr*.png
 *gray*.png
 legacy/
+
+# GitHub Actions (keep workflows but exclude logs)
+.github/workflows/*/logs/
