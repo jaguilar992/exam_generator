@@ -63,8 +63,8 @@ class PDFBuilder:
         # Answer sheet section
         story.extend(self._create_answer_sheet_section(len(questions), config))
         
-        # Questions section
-        story.append(Spacer(1, 0.3*cm))
+        # Questions section con espaciado mínimo
+        story.append(Spacer(1, 0.25*cm))  # Reducido de 0.3cm a 0.1cm
         story.extend(self._create_two_column_questions(questions))
         
         return story
@@ -117,13 +117,16 @@ class PDFBuilder:
         # Main header table
         header_table = self._create_header_table(logo_cell, qr_cell, grade_box, logo_qr_size, grade_box_size)
         elements.append(header_table)
-        elements.append(Spacer(1, -grade_box_size + 0.2*cm))
+        elements.append(Spacer(1, -grade_box_size + 0.25*cm))  # Reducido de 0.2cm a 0.25cm
         
         # Institution and course info
         elements.extend(self._create_institution_info(config))
         
         # Student/exam info table
         elements.append(self._create_info_table(config))
+        
+        # Separación entre info table e instrucciones
+        elements.append(Spacer(1, 0.15*cm))
         
         # Instructions
         elements.append(self._create_instructions(config))
@@ -207,17 +210,29 @@ class PDFBuilder:
         """Create institution and course information."""
         elements = []
         
-        # Institute name
+        # Institute name con fuente y tamaño igual a las opciones
+        compact_institute_style = ParagraphStyle(
+            'CompactInstituteHeader',
+            parent=self.styles['institute_header'],
+            fontSize=10,  # Igual que las opciones
+            fontName=self.styles_manager.font_name  # Fuente normal, no bold
+        )
         institute_para = self.styles_manager.create_paragraph_with_unicode_support(
             f"<b>{config.institute_name}</b>",
-            self.styles['institute_header']
+            compact_institute_style
         )
         elements.append(institute_para)
         
-        # Course name
+        # Course name con fuente y tamaño igual a las opciones
+        compact_course_style = ParagraphStyle(
+            'CompactCourseHeader',
+            parent=self.styles['course_header'],
+            fontSize=10,  # Igual que las opciones
+            fontName=self.styles_manager.font_name  # Fuente normal, igual que opciones
+        )
         course_para = self.styles_manager.create_paragraph_with_unicode_support(
             config.course,
-            self.styles['course_header']
+            compact_course_style
         )
         elements.append(course_para)
         
@@ -237,9 +252,9 @@ class PDFBuilder:
         info_table = Table(info_data, colWidths=[self.content_width/3] * 3)
         info_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
-            ('TOPPADDING', (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),  # Aumentado de 8 a 10 para mejor legibilidad
+            ('TOPPADDING', (0, 0), (-1, -1), 1), # Reducido de 3 a 1
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 1), # Reducido de 3 a 1
         ]))
         
         return info_table
@@ -249,9 +264,18 @@ class PDFBuilder:
         # Get instructions text based on config language
         instructions_text = get_instructions_text(config.language if hasattr(config, 'language') else None)
         
+        # Estilo compacto para las instrucciones
+        compact_instructions_style = ParagraphStyle(
+            'CompactInstructions',
+            parent=self.styles['instructions'],
+            fontSize=10,        # Aumentado de 8 a 10 para mejor legibilidad
+            spaceAfter=5,       # Reducido de 10 a 5
+            spaceBefore=2       # Reducido de 5 a 2
+        )
+        
         return self.styles_manager.create_paragraph_with_unicode_support(
             instructions_text,
-            self.styles['instructions']
+            compact_instructions_style
         )
     
     def _create_answer_sheet_section(
@@ -263,11 +287,16 @@ class PDFBuilder:
         """Create answer sheet section with bubble grid."""
         elements = []
         
-        # Title
+        # Title con espacio reducido después
         title_text = get_answer_sheet_title(config.language if hasattr(config, 'language') else None)
+        title_style = ParagraphStyle(
+            'CompactAnswerTitle',
+            parent=self.styles['answer_title'],
+            spaceAfter=4  # Reducido de 8 a 4
+        )
         title = self.styles_manager.create_paragraph_with_unicode_support(
             title_text,
-            self.styles['answer_title']
+            title_style
         )
         elements.append(title)
         
@@ -290,24 +319,32 @@ class PDFBuilder:
                     row_data.append("")
             answer_data.append(row_data)
         
-        # Answer sheet table
+        # Answer sheet table con padding reducido
         answer_table = Table(answer_data, colWidths=[self.content_width/5] * 5)
         answer_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BOX', (0, 0), (-1, -1), 1, colors.black),
-            ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.gray),
-        ] + self._get_table_padding_style(3)))
+            ('BOX', (0, 0), (-1, -1), 0.5, colors.grey),  # Cambiar grosor 1→0.5 y color black→grey
+            ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.grey),  # Cambiar color gray→grey
+        ] + self._get_table_padding_style(1, 1)))  # Reducido de 3 a 1
         
-        elements.extend([answer_table, Spacer(1, 0.5*cm)])
+        # Spacer final mínimo
+        elements.extend([answer_table, Spacer(1, 0.05*cm)])  # Reducido de 0.2cm a 0.05cm
         return elements
     
     def _create_question_bubble_row(self, question_num: int, correct_answer: Optional[int] = None, is_first_row: bool = False) -> Table:
         """Create a row of bubbles for one question."""
-        # Question number
+        # Question number con estilo compacto
+        compact_number_style = ParagraphStyle(
+            'CompactQuestionNumber',
+            parent=self.styles['question_number'],
+            spaceBefore=0,
+            spaceAfter=0,
+            leading=8  # Interlineado reducido
+        )
         num_para = self.styles_manager.create_paragraph_with_unicode_support(
             f"<b>{question_num}.</b>",
-            self.styles['question_number']
+            compact_number_style
         )
         
         if is_first_row:
@@ -319,7 +356,7 @@ class PDFBuilder:
             for letter in ['A', 'B', 'C', 'D']:
                 letter_para = self.styles_manager.create_paragraph_with_unicode_support(
                     f"<b>{letter}</b>",
-                    self.styles['question_number']
+                    compact_number_style
                 )
                 letter_row.append(letter_para)
             table_data.append(letter_row)
@@ -328,7 +365,7 @@ class PDFBuilder:
             bubble_row = [num_para]
             for i in range(4):  # A, B, C, D
                 is_filled = (correct_answer is not None and i == correct_answer)
-                bubble = self._create_circle_drawing(size=0.5*cm, letter=None, filled=is_filled)
+                bubble = self._create_circle_drawing(size=0.45*cm, letter=None, filled=is_filled)  # Círculos ligeramente más pequeños
                 bubble_row.append(bubble)
             table_data.append(bubble_row)
             
@@ -336,20 +373,20 @@ class PDFBuilder:
             bubble_table.setStyle(TableStyle([
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ] + self._get_table_padding_style(1, 2)))
+            ] + self._get_table_padding_style(0.5, 1)))  # Padding aún más reducido
         else:
             # Resto de filas: círculos sin letras también
             bubbles = [num_para]
             for i in range(4):  # A, B, C, D
                 is_filled = (correct_answer is not None and i == correct_answer)
-                bubble = self._create_circle_drawing(size=0.5*cm, letter=None, filled=is_filled)
+                bubble = self._create_circle_drawing(size=0.45*cm, letter=None, filled=is_filled)  # Círculos ligeramente más pequeños
                 bubbles.append(bubble)
             
             bubble_table = Table([bubbles], colWidths=[0.6*cm, 0.5*cm, 0.5*cm, 0.5*cm, 0.5*cm])
             bubble_table.setStyle(TableStyle([
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ] + self._get_table_padding_style(1, 2)))
+            ] + self._get_table_padding_style(0.5, 1)))  # Padding aún más reducido
         
         return bubble_table
     
@@ -374,12 +411,12 @@ class PDFBuilder:
             
             if left_question:
                 left_content = self._create_compact_question(
-                    left_question, i + 1, include_answers
+                    left_question, i + 1, include_answers, is_right_column=False
                 )
             
             if right_question:
                 right_content = self._create_compact_question(
-                    right_question, i + 2, include_answers
+                    right_question, i + 2, include_answers, is_right_column=True
                 )
             
             # Two-column table with exact 0.7cm horizontal spacing
@@ -397,8 +434,8 @@ class PDFBuilder:
                 ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
             ]))
             
-            # Add reduced vertical spacing between question rows
-            elements.extend([col_table, Spacer(1, 0.3*cm)])
+            # Add moderate vertical spacing between question rows
+            elements.extend([col_table, Spacer(1, 0.3*cm)])  # Aumentado de 0.1cm a 0.2cm para mejor legibilidad
         
         return elements
     
@@ -406,14 +443,22 @@ class PDFBuilder:
         self, 
         question_data: Dict[str, Any], 
         question_num: int, 
-        include_answer: bool = False
+        include_answer: bool = False,
+        is_right_column: bool = False
     ) -> Table:
         """Create a compact question for column layout with border."""
-        # Question text
+        # Question text con estilo ultra-compacto
         question_text = f"<b>{question_num}.</b> {question_data['question']}"
+        ultra_compact_question_style = ParagraphStyle(
+            'UltraCompactQuestion',
+            parent=self.styles['compact_question'],
+            fontSize=10,        # Reducido de 11 a 10
+            leading=11,         # Reducido de 13 a 11
+            spaceAfter=2        # Reducido de 4 a 2
+        )
         question_para = self.styles_manager.create_paragraph_with_unicode_support(
             question_text,
-            self.styles['compact_question']
+            ultra_compact_question_style
         )
         
         # Options
@@ -436,12 +481,13 @@ class PDFBuilder:
             option_para = self.styles_manager.create_paragraph_with_unicode_support(
                 option_text,
                 ParagraphStyle(
-                    'CompactOption',
+                    'UltraCompactOption',
                     parent=self.styles['compact_option'],
                     leftIndent=0.3*cm,
                     spaceBefore=0,      # Eliminar espacio antes
                     spaceAfter=0,       # Eliminar espacio después
-                    leading=8           # Interlineado muy reducido
+                    leading=11,         # Interlineado ajustado para tamaño 10
+                    fontSize=10         # Tamaño mínimo de 10 puntos
                 )
             )
             option_elements.append(option_para)
@@ -451,16 +497,25 @@ class PDFBuilder:
         question_table_data = [[elem] for elem in question_elements]
         
         question_table = Table(question_table_data, colWidths=[(self.content_width - 0.7*cm) / 2])
-        question_table.setStyle(TableStyle([
+        
+        # Definir estilos de borde basados en la columna
+        border_styles = [
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('LINEABOVE', (0, 0), (-1, 0), 0.5, colors.grey),  # Solo borde superior
-            ('LINEAFTER', (-1, 0), (-1, -1), 0.5, colors.grey), # Solo borde derecho
-            ('LEFTPADDING', (0, 0), (-1, -1), 0.2*cm),    
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0.2*cm),
-            ('TOPPADDING', (0, 0), (-1, -1), 0.1*cm),     # Solo padding arriba reducido
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 0.05*cm), # Padding abajo mínimo
-        ]))
+            ('LINEABOVE', (0, 0), (-1, 0), 0.5, colors.grey),  # Borde superior siempre
+            ('LEFTPADDING', (0, 0), (-1, -1), 0.15*cm),   
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0.15*cm),  
+            ('TOPPADDING', (0, 0), (-1, -1), 0.05*cm),    
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0.02*cm), 
+        ]
+        
+        # Agregar borde vertical según la columna
+        if is_right_column:
+            border_styles.append(('LINEBEFORE', (0, 0), (0, -1), 0.5, colors.grey))  # Borde izquierdo para columna derecha
+        else:
+            border_styles.append(('LINEAFTER', (-1, 0), (-1, -1), 0.5, colors.grey))  # Borde derecho para columna izquierda
+        
+        question_table.setStyle(TableStyle(border_styles))
         
         return question_table
     
@@ -521,7 +576,7 @@ class PDFBuilder:
         except Exception:
             return image_path  # Return original on error
     
-    def _get_table_padding_style(self, padding: int = 2, top_bottom: Optional[int] = None) -> List[tuple]:
+    def _get_table_padding_style(self, padding: float = 2, top_bottom: Optional[float] = None) -> List[tuple]:
         """Get standard table padding style."""
         tb_padding = top_bottom if top_bottom is not None else padding
         return [

@@ -48,10 +48,10 @@ class TextStrings:
             "answer_key_student_name": "ANSWER KEY",
             
             # Default form fields
-            "student_name_blank": "Student Name: ___________________________________________________________",
-            "course_section_blank": "Course/Section: ___________________",
-            "date_blank": "Date: ________________",
-            "list_number_blank": "Student #: ________________"
+            "student_name_blank": "Student Name: __________________________________________________________",
+            "course_section_blank": "Course/Section: __________________",
+            "date_blank": "Date: _______________",
+            "list_number_blank": "Student #: _______________"
         },
         
         Language.SPANISH: {
@@ -62,7 +62,7 @@ class TextStrings:
             "professor_label": "Docente",
             "date_label": "Fecha",
             "list_number_label": "N° Lista",
-            "value_label": "Puntos",
+            "value_label": "Valor",
             "points_suffix": "pts",
             "grade_label": "Nota",
             
@@ -81,10 +81,10 @@ class TextStrings:
             "answer_key_student_name": "CLAVE DE RESPUESTAS",
             
             # Default form fields
-            "student_name_blank": "Nombre del Estudiante: __________________________________________________",
-            "course_section_blank": "Curso/Sección: ___________________", 
-            "date_blank": "Fecha: ________________",
-            "list_number_blank": "N° Lista: ________________"
+            "student_name_blank": "Nombre del Estudiante: _________________________________________________",
+            "course_section_blank": "Curso/Sección: __________________", 
+            "date_blank": "Fecha: _______________",
+            "list_number_blank": "N° Lista: _______________"
         }
     }
     
