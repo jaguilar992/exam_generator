@@ -3,12 +3,12 @@
 Main ExamGenerator class - the public API for the library.
 """
 
+import atexit
 import os
 import tempfile
-import atexit
+from typing import List, Dict, Any, Optional
+
 import qrcode
-from typing import List, Dict, Any, Optional, Union
-from PIL import Image
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate
@@ -58,11 +58,6 @@ class ExamGenerator:
         """
         if not isinstance(config, ExamConfig):
             raise ExamGeneratorError("config must be an instance of ExamConfig")
-        
-        try:
-            config.validate()
-        except Exception as e:
-            raise ExamGeneratorError(f"Invalid configuration: {str(e)}")
         
         self.config = config
         self.shuffle_options = shuffle_options

@@ -4,9 +4,9 @@ Font management system for the exam generator library.
 Provides system-independent font support using embedded Liberation fonts.
 """
 
-import os
 from pathlib import Path
 from typing import Optional, Dict
+
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase.pdfmetrics import registerFontFamily
@@ -15,6 +15,7 @@ from reportlab.pdfbase.pdfmetrics import registerFontFamily
 class EmbeddedFontManager:
     """
     Manages embedded Liberation fonts for consistent cross-platform rendering.
+    Automatically falls back to system fonts if embedded fonts are unavailable.
     """
     
     def __init__(self):
@@ -40,25 +41,16 @@ class EmbeddedFontManager:
             return True
         
         try:
-            # Register our embedded Liberation fonts
-            if self._register_liberation_fonts():
-                self.fonts_registered = True
-                return True
+            self._register_liberation_fonts()
         except Exception as e:
             print(f"Warning: Could not register Liberation fonts: {e}")
+            self._register_fallback_fonts()
         
-        # Fallback to built-in fonts
-        self._register_fallback_fonts()
         self.fonts_registered = True
         return True
     
-    def _register_liberation_fonts(self) -> bool:
-        """
-        Register Liberation Sans fonts from embedded files.
-        
-        Returns:
-            bool: True if successful
-        """
+    def _register_liberation_fonts(self) -> None:
+        """Register Liberation Sans fonts from embedded files."""
         fonts_dir = self.get_fonts_directory()
         
         # Define font mappings
@@ -69,12 +61,11 @@ class EmbeddedFontManager:
             'Liberation-Sans-BoldItalic': 'LiberationSans-BoldItalic.ttf'
         }
         
-        # Check if font files exist
+        # Check if required font files exist
         required_fonts = ['Liberation-Sans', 'Liberation-Sans-Bold']
         for font_name in required_fonts:
             font_file = font_files[font_name]
             font_path = fonts_dir / font_file
-            
             if not font_path.exists():
                 raise FileNotFoundError(f"Font file not found: {font_path}")
         
@@ -93,8 +84,6 @@ class EmbeddedFontManager:
         
         self.font_name = 'Liberation-Sans'
         self.font_name_bold = 'Liberation-Sans-Bold'
-        
-        return True
     
     def _register_fallback_fonts(self):
         """Register fallback fonts if Liberation fonts are not available."""
@@ -172,26 +161,3 @@ def ensure_fonts_available() -> bool:
         bool: True if fonts are available
     """
     return get_font_manager().ensure_fonts_registered()
-
-
-def get_font_name(bold: bool = False) -> str:
-    """
-    Get font name with automatic font registration.
-    
-    Args:
-        bold (bool): Whether to get bold variant
-        
-    Returns:
-        str: Font name
-    """
-    return get_font_manager().get_font_name(bold)
-
-
-def get_available_fonts() -> Dict[str, str]:
-    """
-    Get available font mappings.
-    
-    Returns:
-        Dict[str, str]: Font mappings
-    """
-    return get_font_manager().get_available_fonts()

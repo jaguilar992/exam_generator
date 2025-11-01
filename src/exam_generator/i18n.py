@@ -142,12 +142,6 @@ class TextStrings:
         """Get label with colon suffix."""
         return f"{self.get(key)}:"
     
-    def get_field_with_blank_line(self, label_key: str, line_length: int = 65) -> str:
-        """Get field label with blank line for filling."""
-        label = self.get_label_with_colon(label_key)
-        line = "_" * line_length
-        return f"{label} {line}"
-    
     def get_points_text(self, points: int) -> str:
         """Get formatted points text."""
         return f"{self.get('value_label')}: {points} {self.get('points_suffix')}"

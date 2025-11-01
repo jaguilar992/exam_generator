@@ -14,8 +14,8 @@ class ExamConfig:
     """
     Configuration class for exam generation.
     
-    This class holds all the configuration parameters needed to generate an exam,
-    without any hardcoded values. All parameters must be provided by the user.
+    This class holds all the configuration parameters needed to generate an exam.
+    All required parameters are validated during initialization.
     """
     
     def __init__(
@@ -53,23 +53,9 @@ class ExamConfig:
         Raises:
             ConfigurationError: If required parameters are missing or invalid
         """
-        # Validate required parameters
-        if not institute_name or not isinstance(institute_name, str):
-            raise ConfigurationError("institute_name is required and must be a string")
-        if not course_name or not isinstance(course_name, str):
-            raise ConfigurationError("course_name is required and must be a string")
-        if not class_name or not isinstance(class_name, str):
-            raise ConfigurationError("class_name is required and must be a string")
-        if not professor_name or not isinstance(professor_name, str):
-            raise ConfigurationError("professor_name is required and must be a string")
-        if not isinstance(total_points, int) or total_points <= 0:
-            raise ConfigurationError("total_points must be a positive integer")
-        if not password or not isinstance(password, str):
-            raise ConfigurationError("password is required and must be a string")
-        if not logo_path or not isinstance(logo_path, str):
-            raise ConfigurationError("logo_path is required and must be a string")
-        if not os.path.exists(logo_path):
-            raise ConfigurationError(f"Logo file does not exist: {logo_path}")
+        # Validate and store all parameters
+        self._validate_required_params(institute_name, course_name, class_name, 
+                                     professor_name, total_points, password, logo_path)
         
         # Set core parameters
         self.institute_name = institute_name.strip()
@@ -109,6 +95,28 @@ class ExamConfig:
         self.password = password.strip()
         self.logo_path = logo_path.strip()
     
+    def _validate_required_params(self, institute_name: str, course_name: str, class_name: str, 
+                                 professor_name: str, total_points: int, password: str, logo_path: str) -> None:
+        """Validate all required parameters."""
+        required_strings = {
+            'institute_name': institute_name,
+            'course_name': course_name, 
+            'class_name': class_name,
+            'professor_name': professor_name,
+            'password': password,
+            'logo_path': logo_path
+        }
+        
+        for name, value in required_strings.items():
+            if not value or not isinstance(value, str):
+                raise ConfigurationError(f"{name} is required and must be a string")
+        
+        if not isinstance(total_points, int) or total_points <= 0:
+            raise ConfigurationError("total_points must be a positive integer")
+        
+        if not os.path.exists(logo_path):
+            raise ConfigurationError(f"Logo file does not exist: {logo_path}")
+
     def validate(self) -> None:
         """
         Validate the configuration parameters.
@@ -116,9 +124,6 @@ class ExamConfig:
         Raises:
             ConfigurationError: If any parameter is invalid
         """
-        if self.logo_path and not isinstance(self.logo_path, str):
-            raise ConfigurationError("logo_path must be a string if provided")
-        
         if self.year < 1900 or self.year > 2100:
             raise ConfigurationError("year must be between 1900 and 2100")
     
@@ -390,18 +395,18 @@ class ExamConfigBuilder:
             ConfigurationError: If required parameters are missing
         """
         # Check required parameters
-        if not self._institute_name:
-            raise ConfigurationError("Institute name is required. Use .institute(name)")
-        if not self._course_name:
-            raise ConfigurationError("Course name is required. Use .course(name)")
-        if not self._class_name:
-            raise ConfigurationError("Class name is required. Use .class_subject(name)")
-        if not self._professor_name:
-            raise ConfigurationError("Professor name is required. Use .professor(name)")
-        if not self._password:
-            raise ConfigurationError("Password is required. Use .password(password)")
-        if not self._logo_path:
-            raise ConfigurationError("Logo path is required. Use .logo(path)")
+        required_fields = {
+            'institute_name': (self._institute_name, "Institute name is required. Use .institute(name)"),
+            'course_name': (self._course_name, "Course name is required. Use .course(name)"),
+            'class_name': (self._class_name, "Class name is required. Use .class_subject(name)"),
+            'professor_name': (self._professor_name, "Professor name is required. Use .professor(name)"),
+            'password': (self._password, "Password is required. Use .password(password)"),
+            'logo_path': (self._logo_path, "Logo path is required. Use .logo(path)")
+        }
+        
+        for field_name, (value, error_msg) in required_fields.items():
+            if not value:
+                raise ConfigurationError(error_msg)
         
         return ExamConfig(
             institute_name=self._institute_name,

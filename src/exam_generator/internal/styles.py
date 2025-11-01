@@ -9,7 +9,7 @@ from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
 
 from ..fonts import get_font_manager, ensure_fonts_available
 

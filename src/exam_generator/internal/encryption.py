@@ -3,8 +3,10 @@
 Encryption utilities for answer key protection.
 """
 
-from ..exceptions import EncryptionError
 from string import ascii_letters, digits
+from typing import List
+
+from ..exceptions import EncryptionError
 
 # Custom alphabet for encoding
 ALPHABET = digits + ascii_letters
@@ -68,6 +70,13 @@ class AnswerKeyEncryption:
         except Exception as e:
             raise EncryptionError(f"Decryption failed: {str(e)}")
     
+    def _prepare_key_indices(self, key: str) -> List[int]:
+        """Prepare key indices for encryption/decryption."""
+        key_indices = [self.alphabet_index[c] for c in key if c in self.alphabet_index]
+        if not key_indices:
+            raise EncryptionError("Key contains no valid characters")
+        return key_indices
+    
     def _vigenere_encrypt(self, plaintext: str, key: str) -> str:
         """
         Internal Vigenère encryption implementation.
@@ -79,10 +88,7 @@ class AnswerKeyEncryption:
         Returns:
             str: Encrypted text
         """
-        key_indices = [self.alphabet_index[c] for c in key if c in self.alphabet_index]
-        if not key_indices:
-            raise EncryptionError("Key contains no valid characters")
-        
+        key_indices = self._prepare_key_indices(key)
         result = []
         key_position = 0
         
@@ -111,10 +117,7 @@ class AnswerKeyEncryption:
         Returns:
             str: Decrypted text
         """
-        key_indices = [self.alphabet_index[c] for c in key if c in self.alphabet_index]
-        if not key_indices:
-            raise EncryptionError("Key contains no valid characters")
-        
+        key_indices = self._prepare_key_indices(key)
         result = []
         key_position = 0
         
