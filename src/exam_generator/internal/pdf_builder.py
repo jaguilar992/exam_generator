@@ -291,6 +291,9 @@ class PDFBuilder:
             for col in range(5):
                 question_num = row * 5 + col + 1
                 
+                # Chess pattern: alternate markers (row + col) % 2 determines if marker is filled
+                is_marker_filled = (row + col) % 2 == 0
+                
                 if question_num <= max_questions:
                     # First row (questions 1-5) has letters above circles
                     is_first_row = (row == 0)
@@ -298,11 +301,12 @@ class PDFBuilder:
                         question_num, 
                         correct_answers[question_num - 1] if correct_answers and question_num <= len(correct_answers) else None,
                         is_first_row=is_first_row,
+                        is_marker_filled=is_marker_filled,
                     )
                     row_data.append(question_cell)
                 else:
-                    # Empty cell with position marker
-                    empty_cell = self._create_empty_cell_with_marker()
+                    # Empty cell with position marker in chess pattern
+                    empty_cell = self._create_empty_cell_with_marker(is_marker_filled)
                     row_data.append(empty_cell)
             answer_data.append(row_data)
         
@@ -319,7 +323,7 @@ class PDFBuilder:
         elements.extend([answer_table, Spacer(1, 0.05*cm)])
         return elements
     
-    def _create_question_bubble_row(self, question_num: int, correct_answer: Optional[int] = None, is_first_row: bool = False) -> Table:
+    def _create_question_bubble_row(self, question_num: int, correct_answer: Optional[int] = None, is_first_row: bool = False, is_marker_filled: bool = True) -> Table:
         """Create a row of bubbles for one question."""
         # Compact question number style
         compact_number_style = self._create_compact_style_with_spacing(
@@ -372,7 +376,7 @@ class PDFBuilder:
             ] + self._get_table_padding_style(0.5, 1)))
         
         # Create floating marker that overlaps without affecting layout
-        position_marker = self._create_position_marker()
+        position_marker = self._create_position_marker(is_marker_filled)
         
         # Create container table with absolute superposition
         # Content maintains its original size, marker floats in bottom-right corner
@@ -406,10 +410,10 @@ class PDFBuilder:
         
         return wrapper_table
     
-    def _create_empty_cell_with_marker(self) -> Table:
+    def _create_empty_cell_with_marker(self, is_marker_filled: bool = True) -> Table:
         """Create an empty cell with position marker in bottom-right corner."""
         # Create floating marker
-        position_marker = self._create_position_marker()
+        position_marker = self._create_position_marker(is_marker_filled)
 
         # Empty cell (just whitespace)
         empty_content = ""
@@ -524,10 +528,13 @@ class PDFBuilder:
         for i, option in enumerate(options):
             letter = chr(65 + i)  # A, B, C, D
             
+            # Use "---" for empty options instead of blank text
+            display_option = option if option.strip() else "---"
+            
             if include_answer and correct_answer_index is not None and i == correct_answer_index:
-                option_text = f"<b>{letter}) {option} ✓</b>" if option else f"<b>{letter}) ✓</b>"
+                option_text = f"<b>{letter}) {display_option} ✓</b>"
             else:
-                option_text = f"{letter}) {option}" if option else f"{letter}) "
+                option_text = f"{letter}) {display_option}"
             
             option_para = self.styles_manager.create_paragraph_with_unicode_support(
                 option_text,
@@ -567,8 +574,8 @@ class PDFBuilder:
         
         return question_table
     
-    def _create_position_marker(self) -> Drawing:
-        """Create a small position marker for scanning correction."""
+    def _create_position_marker(self, is_filled: bool = True) -> Drawing:
+        """Create a small position marker for scanning correction in chess pattern."""
         # Marker of exactly 2mm
         marker_size = 0.2*cm
         
@@ -577,11 +584,13 @@ class PDFBuilder:
         
         # Create a small square marker that occupies the full space
         marker = Rect(0, 0, marker_size, marker_size)
-        marker.strokeWidth = 0
+        marker.strokeWidth = 0.5 if not is_filled else 0
+        marker.strokeColor = colors.black if not is_filled else None
         
-        marker.fillColor = colors.black
-        
-        d.add(marker)
+        # Chess pattern: filled (black) or empty (white with border)
+        if is_filled:
+            marker.fillColor = colors.black        
+            d.add(marker)
         return d
 
     def _create_circle_drawing(self, size: float = 0.5*cm, letter: Optional[str] = None, filled: bool = False) -> Drawing:
