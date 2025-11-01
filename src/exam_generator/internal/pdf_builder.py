@@ -362,7 +362,7 @@ class PDFBuilder:
         return self._create_question_columns(questions, include_answers=True)
     
     def _create_question_columns(self, questions: List[Dict[str, Any]], include_answers: bool = False) -> List[Any]:
-        """Create questions in two-column format."""
+        """Create questions in two-column format with 0.7cm spacing."""
         elements = []
         
         for i in range(0, len(questions), 2):
@@ -382,7 +382,7 @@ class PDFBuilder:
                     right_question, i + 2, include_answers
                 )
             
-            # Two-column table with 0.7cm spacing
+            # Two-column table with exact 0.7cm horizontal spacing
             col_data = [[left_content, right_content]]
             column_width = (self.content_width - 0.7*cm) / 2
             col_table = Table(col_data, colWidths=[column_width, column_width])
@@ -390,11 +390,14 @@ class PDFBuilder:
                 ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                 ('LEFTPADDING', (0, 0), (0, 0), 0),
-                ('RIGHTPADDING', (0, 0), (0, 0), 0.35*cm),
-                ('LEFTPADDING', (1, 0), (1, 0), 0.35*cm),
+                ('RIGHTPADDING', (0, 0), (0, 0), 0.35*cm),  # Half of 0.7cm spacing
+                ('LEFTPADDING', (1, 0), (1, 0), 0.35*cm),   # Half of 0.7cm spacing
                 ('RIGHTPADDING', (1, 0), (1, 0), 0),
-            ] + self._get_no_padding_style('TOP', 'BOTTOM')))
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+            ]))
             
+            # Add reduced vertical spacing between question rows
             elements.extend([col_table, Spacer(1, 0.3*cm)])
         
         return elements
@@ -405,7 +408,7 @@ class PDFBuilder:
         question_num: int, 
         include_answer: bool = False
     ) -> Table:
-        """Create a compact question for column layout."""
+        """Create a compact question for column layout with border."""
         # Question text
         question_text = f"<b>{question_num}.</b> {question_data['question']}"
         question_para = self.styles_manager.create_paragraph_with_unicode_support(
@@ -435,20 +438,29 @@ class PDFBuilder:
                 ParagraphStyle(
                     'CompactOption',
                     parent=self.styles['compact_option'],
-                    leftIndent=0.3*cm
+                    leftIndent=0.3*cm,
+                    spaceBefore=0,      # Eliminar espacio antes
+                    spaceAfter=0,       # Eliminar espacio después
+                    leading=8           # Interlineado muy reducido
                 )
             )
             option_elements.append(option_para)
         
-        # Build question table
-        question_elements = [question_para] + option_elements + [Spacer(1, 0.2*cm)]
+        # Build question table with border and padding
+        question_elements = [question_para] + option_elements
         question_table_data = [[elem] for elem in question_elements]
         
         question_table = Table(question_table_data, colWidths=[(self.content_width - 0.7*cm) / 2])
         question_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ] + self._get_no_padding_style()))
+            ('LINEABOVE', (0, 0), (-1, 0), 0.5, colors.grey),  # Solo borde superior
+            ('LINEAFTER', (-1, 0), (-1, -1), 0.5, colors.grey), # Solo borde derecho
+            ('LEFTPADDING', (0, 0), (-1, -1), 0.2*cm),    
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0.2*cm),
+            ('TOPPADDING', (0, 0), (-1, -1), 0.1*cm),     # Solo padding arriba reducido
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0.05*cm), # Padding abajo mínimo
+        ]))
         
         return question_table
     
