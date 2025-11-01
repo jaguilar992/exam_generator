@@ -129,8 +129,10 @@ class QuestionParser:
         # The correct answer is always the first option initially (index 0)
         correct_answer_index = 0
         
-        # Shuffle options if enabled
-        if self.shuffle_options and len([opt for opt in options if opt]) > 1:
+        # Shuffle options if enabled, there are at least 2 non-empty options, 
+        # and it's not a true/false question
+        non_empty_count = len([opt for opt in options if opt.strip()])
+        if self.shuffle_options and non_empty_count > 1 and not self._is_true_false_question(options):
             correct_answer_index = self._shuffle_options(options)
         
         return {
@@ -141,7 +143,7 @@ class QuestionParser:
     
     def _shuffle_options(self, options: List[str]) -> int:
         """
-        Shuffle the options and return the new index of the correct answer.
+        Shuffle only the non-empty options and return the new index of the correct answer.
         
         Args:
             options (List[str]): List of options to shuffle in-place
@@ -149,17 +151,57 @@ class QuestionParser:
         Returns:
             int: New index of the correct answer
         """
-        # Create list of tuples (option, is_correct)
-        options_with_flags = [(opt, i == 0) for i, opt in enumerate(options)]
+        # Separate non-empty options from empty ones
+        non_empty_options = [opt for opt in options if opt.strip()]
+        empty_options = [opt for opt in options if not opt.strip()]
         
-        # Shuffle the list
+        # Create list of tuples (option, is_correct) only for non-empty options
+        options_with_flags = [(opt, i == 0) for i, opt in enumerate(non_empty_options)]
+        
+        # Shuffle only the non-empty options
         random.shuffle(options_with_flags)
         
-        # Update the options list and find new correct answer index
+        # Rebuild the options list: shuffled non-empty options first, then empty ones
         new_correct_index = 0
         for i, (option, is_correct) in enumerate(options_with_flags):
             options[i] = option
             if is_correct:
                 new_correct_index = i
         
+        # Fill remaining positions with empty options
+        for i, empty_opt in enumerate(empty_options):
+            if i + len(options_with_flags) < len(options):
+                options[i + len(options_with_flags)] = empty_opt
+        
         return new_correct_index
+    
+    def _is_true_false_question(self, options: List[str]) -> bool:
+        """
+        Detect if this is a true/false question that should not be shuffled.
+        
+        Args:
+            options (List[str]): List of options to analyze
+            
+        Returns:
+            bool: True if this appears to be a true/false question
+        """
+        # Get non-empty options
+        non_empty_options = [opt.strip().lower() for opt in options if opt.strip()]
+        
+        # Must have exactly 2 options for true/false
+        if len(non_empty_options) != 2:
+            return False
+        
+        # Define true/false patterns (in multiple languages)
+        true_patterns = {
+            'verdadero', 'true', 'cierto', 'correcto', 'sí', 'si', 'yes', 'v', 't'
+        }
+        false_patterns = {
+            'falso', 'false', 'incorrecto', 'no', 'f'
+        }
+        
+        # Check if we have one true and one false option
+        has_true = any(opt in true_patterns for opt in non_empty_options)
+        has_false = any(opt in false_patterns for opt in non_empty_options)
+        
+        return has_true and has_false
