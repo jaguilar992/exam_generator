@@ -12,7 +12,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT, TA_CENTER
-from reportlab.graphics.shapes import Drawing, Circle, String
+from reportlab.graphics.shapes import Drawing, Circle, String, Rect
 from PIL import Image as PILImage
 
 from .styles import StylesManager
@@ -388,7 +388,43 @@ class PDFBuilder:
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ] + self._get_table_padding_style(0.5, 1)))  # Padding aún más reducido
         
-        return bubble_table
+        # Crear marcador flotante que se superpone sin afectar el layout
+        position_marker = self._create_position_marker()
+        
+        # Crear tabla contenedora con superposición absoluta
+        # El contenido mantiene su tamaño original, el marcador flota en esquina inferior derecha
+        # Estructura: [content, marker]
+        #             [empty,   empty ]
+        marker_data = [[bubble_table, position_marker]]
+        
+        # Ancho total de la celda original
+        total_width = self.content_width / 5
+        marker_size = 0.2*cm  # 2mm exactos
+        
+        # El marcador no ocupa espacio horizontal real, el contenido usa todo el ancho
+        wrapper_table = Table(marker_data, 
+                             colWidths=[total_width, 0])  # Contenido usa todo el ancho, marcador ancho 0 (flotante)
+        
+        wrapper_table.setStyle(TableStyle([
+            # Contenido ocupa toda la celda normalmente
+            ('ALIGN', (0, 0), (0, 0), 'CENTER'),
+            ('VALIGN', (0, 0), (0, 0), 'TOP'),
+            # Marcador flotante en esquina inferior derecha (ancho 0 = flotante)
+            ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+            ('VALIGN', (1, 0), (1, 0), 'BOTTOM'),
+            # Contenido con padding normal
+            ('LEFTPADDING', (0, 0), (0, 0), 0),
+            ('RIGHTPADDING', (0, 0), (0, 0), 0),
+            ('TOPPADDING', (0, 0), (0, 0), 0),
+            ('BOTTOMPADDING', (0, 0), (0, 0), 0),
+            # Sin padding para posicionamiento exacto del marcador
+            ('LEFTPADDING', (1, 0), (1, 0), 0),
+            ('RIGHTPADDING', (1, 0), (1, 0), 0),
+            ('TOPPADDING', (1, 0), (1, 0), 0),
+            ('BOTTOMPADDING', (1, 0), (1, 0), 0),
+        ]))
+        
+        return wrapper_table
     
     def _create_two_column_questions(self, questions: List[Dict[str, Any]]) -> List[Any]:
         """Create questions in two-column layout."""
@@ -519,6 +555,23 @@ class PDFBuilder:
         
         return question_table
     
+    def _create_position_marker(self) -> Drawing:
+        """Create a small position marker for scanning correction."""
+        # Marcador de exactamente 2mm
+        marker_size = 0.2*cm  # 2 milímetros
+        
+        # Drawing con tamaño mínimo para que no afecte el layout
+        d = Drawing(marker_size, marker_size)
+        
+        # Create a small square marker that ocupa todo el espacio
+        marker = Rect(0, 0, marker_size, marker_size)
+        marker.strokeWidth = 0
+        
+        marker.fillColor = colors.black
+        
+        d.add(marker)
+        return d
+
     def _create_circle_drawing(self, size: float = 0.5*cm, letter: Optional[str] = None, filled: bool = False) -> Drawing:
         """Create a circle drawing with optional letter and fill."""
         d = Drawing(size, size)
