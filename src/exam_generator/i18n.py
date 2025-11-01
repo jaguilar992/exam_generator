@@ -26,7 +26,7 @@ class TextStrings:
             # Header texts
             "student_label": "Student",
             "course_label": "Course", 
-            "class_label": "Section",
+            "class_label": "Subject",
             "professor_label": "Instructor",
             "date_label": "Date",
             "list_number_label": "Student #",
@@ -57,8 +57,8 @@ class TextStrings:
         Language.SPANISH: {
             # Header texts
             "student_label": "Estudiante",
-            "course_label": "Asignatura",
-            "class_label": "Sección", 
+            "course_label": "Sección",
+            "class_label": "Asignatura", 
             "professor_label": "Docente",
             "date_label": "Fecha",
             "list_number_label": "N° Lista",
@@ -82,7 +82,7 @@ class TextStrings:
             
             # Default form fields
             "student_name_blank": "Nombre del Estudiante: __________________________________________________",
-            "course_section_blank": "Asignatura/Sección: ___________________", 
+            "course_section_blank": "Curso/Sección: ___________________", 
             "date_blank": "Fecha: ________________",
             "list_number_blank": "N° Lista: ________________"
         }
