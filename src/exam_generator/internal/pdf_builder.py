@@ -278,9 +278,12 @@ class PDFBuilder:
             for col in range(5):
                 question_num = row * 5 + col + 1
                 if question_num <= max_questions:
+                    # Primera fila (preguntas 1-5) tiene letras arriba de los círculos
+                    is_first_row = (row == 0)
                     question_cell = self._create_question_bubble_row(
                         question_num, 
-                        correct_answers[question_num - 1] if correct_answers and question_num <= len(correct_answers) else None
+                        correct_answers[question_num - 1] if correct_answers and question_num <= len(correct_answers) else None,
+                        is_first_row=is_first_row
                     )
                     row_data.append(question_cell)
                 else:
@@ -299,7 +302,7 @@ class PDFBuilder:
         elements.extend([answer_table, Spacer(1, 0.5*cm)])
         return elements
     
-    def _create_question_bubble_row(self, question_num: int, correct_answer: Optional[int] = None) -> Table:
+    def _create_question_bubble_row(self, question_num: int, correct_answer: Optional[int] = None, is_first_row: bool = False) -> Table:
         """Create a row of bubbles for one question."""
         # Question number
         num_para = self.styles_manager.create_paragraph_with_unicode_support(
@@ -307,18 +310,46 @@ class PDFBuilder:
             self.styles['question_number']
         )
         
-        # Create bubbles A, B, C, D
-        bubbles = [num_para]
-        for i, letter in enumerate(['A', 'B', 'C', 'D']):
-            is_filled = (correct_answer is not None and i == correct_answer)
-            bubble = self._create_circle_drawing(size=0.5*cm, letter=letter, filled=is_filled)
-            bubbles.append(bubble)
-        
-        bubble_table = Table([bubbles], colWidths=[0.6*cm, 0.5*cm, 0.5*cm, 0.5*cm, 0.5*cm])
-        bubble_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ] + self._get_table_padding_style(1, 2)))
+        if is_first_row:
+            # Primera fila: letras arriba, círculos sin letras
+            table_data = []
+            
+            # Fila de letras arriba
+            letter_row = [""]  # Celda vacía para el número de pregunta
+            for letter in ['A', 'B', 'C', 'D']:
+                letter_para = self.styles_manager.create_paragraph_with_unicode_support(
+                    f"<b>{letter}</b>",
+                    self.styles['question_number']
+                )
+                letter_row.append(letter_para)
+            table_data.append(letter_row)
+            
+            # Fila de círculos sin letras
+            bubble_row = [num_para]
+            for i in range(4):  # A, B, C, D
+                is_filled = (correct_answer is not None and i == correct_answer)
+                bubble = self._create_circle_drawing(size=0.5*cm, letter=None, filled=is_filled)
+                bubble_row.append(bubble)
+            table_data.append(bubble_row)
+            
+            bubble_table = Table(table_data, colWidths=[0.6*cm, 0.5*cm, 0.5*cm, 0.5*cm, 0.5*cm])
+            bubble_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ] + self._get_table_padding_style(1, 2)))
+        else:
+            # Resto de filas: círculos sin letras también
+            bubbles = [num_para]
+            for i in range(4):  # A, B, C, D
+                is_filled = (correct_answer is not None and i == correct_answer)
+                bubble = self._create_circle_drawing(size=0.5*cm, letter=None, filled=is_filled)
+                bubbles.append(bubble)
+            
+            bubble_table = Table([bubbles], colWidths=[0.6*cm, 0.5*cm, 0.5*cm, 0.5*cm, 0.5*cm])
+            bubble_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ] + self._get_table_padding_style(1, 2)))
         
         return bubble_table
     

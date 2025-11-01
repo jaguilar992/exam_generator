@@ -170,3 +170,10 @@ legacy/
 
 # GitHub Actions (keep workflows but exclude logs)
 .github/workflows/*/logs/
+*.ipynb
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.tiff
+*.bmp
